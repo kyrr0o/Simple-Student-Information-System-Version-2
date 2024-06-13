@@ -62,9 +62,14 @@ class SimpleStudentInformationSystem(tk.Tk):
             font=("Arial", 15, "bold"),
             bg="gray",
             foreground="white",
-            command=self.destroy
+            command=self.confirm_exit
         )
         exit_button.place(x=40, y=580, width=200)
+
+    def confirm_exit(self):
+        confirm = messagebox.askquestion("Confirm Exit", "Are you sure you want to exit?")
+        if confirm == "yes":
+            self.destroy()
 
     def create_student_registration_interface(self):
         if hasattr(self, "student_interface_frame"):
