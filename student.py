@@ -323,10 +323,11 @@ class StudentInformationSystemGUI:
 
             self.tree.insert("", "end", values=(student_id, first_name, last_name, gender, course, year_level))
             self.clear_entries()
+            messagebox.showinfo("Success", "Student added successfully!")
 
         except Error as e:
             print(f"Error: {e}")
-            messagebox.showerror("Error", "Failed to add student.")
+            messagebox.showerror("Error", f"Student {student_id} already exists.")
 
     def delete_student(self):
         selected_items = self.tree.selection()
@@ -347,34 +348,28 @@ class StudentInformationSystemGUI:
 
             self.connection.commit()
 
+            messagebox.showinfo("Success", "Selected student(s) deleted successfully!")
+
         except Error as e:
             print(f"Error: {e}")
             messagebox.showerror("Error", "Failed to delete student(s).")
 
-    def search_student(self):
-        keyword = self.search_entry.get().strip()
-        if not keyword:
+    def search_student(self, event=None):
+        keyword = self.search_entry.get().lower()
+
+        if not keyword.strip():
             messagebox.showwarning("Warning", "Please enter a keyword to search.")
             return
 
-        self.tree.delete(*self.tree.get_children())
+        # Clear previous selection
+        for item in self.tree.selection():
+            self.tree.selection_remove(item)
 
-        if self.connection:
-            try:
-                with self.connection.cursor() as cursor:
-                    query = """
-                    SELECT * FROM students 
-                    WHERE idNum LIKE %s OR first_name LIKE %s OR last_name LIKE %s 
-                    OR gender LIKE %s OR course_code LIKE %s OR yearLevel LIKE %s
-                    """
-                    wildcard_keyword = f"%{keyword}%"
-                    cursor.execute(query, (wildcard_keyword, wildcard_keyword, wildcard_keyword, wildcard_keyword, wildcard_keyword, wildcard_keyword))
-                    students = cursor.fetchall()
-                    for student in students:
-                        self.tree.insert("", "end", values=student)
-            except Error as e:
-                print(f"Error: {e}")
-                messagebox.showerror("Error", "Failed to search for students.")
+        # Highlight rows matching the search keyword
+        for item in self.tree.get_children():
+            values = self.tree.item(item, 'values')
+            if values and any(keyword in value.lower() for value in values):
+                self.tree.selection_add(item)
 
     def cancel_edit(self):
         self.clear_entries()
