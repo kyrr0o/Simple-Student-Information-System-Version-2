@@ -204,9 +204,15 @@ class CourseInformationSystemGUI:
     def add_course(self):
         course_code = self.coursecode_entries.get()
         course_title = self.coursetitle_entries.get()
+        
         if not course_code or not course_title:
             messagebox.showwarning("Warning", "Please fill in all fields.")
             return
+        
+        if self.check_course(course_code):
+            messagebox.showerror("Error", f"Course {course_code} already exists.")
+            return
+        
         self.cursor.execute("INSERT INTO Courses (course_code, course_title) VALUES (%s, %s)", (course_code, course_title))
         self.connection.commit()
         self.tree.insert("", "end", values=(course_code, course_title))
@@ -219,32 +225,62 @@ class CourseInformationSystemGUI:
         if not selected_item:
             messagebox.showwarning("Warning", "Please select a course to delete.")
             return
+        
         confirm = messagebox.askquestion("Confirmation", "Are you sure you want to delete the selected course(s)?")
         if confirm != "yes":
             return
-        course_code = self.tree.item(selected_item, "values")[0]
-        self.cursor.execute("DELETE FROM Courses WHERE course_code = %s", (course_code,))
-        self.connection.commit()
-        self.tree.delete(selected_item)
+
+        # Get the course_code from the selected item in the Treeview
+        course_values = self.tree.item(selected_item, "values")
+        if not course_values:
+            messagebox.showwarning("Warning", "Selected item does not contain course information.")
+            return
+
+        course_code = course_values[0]
+        
+        try:
+            # Update students' course_code to NULL where it matches the course_code being deleted
+            self.cursor.execute("UPDATE students SET course_code = NULL WHERE course_code = %s", (course_code,))
+            self.connection.commit()
+        except mysql.connector.Error as err:
+            messagebox.showerror("Error", f"Error updating students: {err}")
+            return
+
+        try:
+            # Delete the course from the Courses table
+            self.cursor.execute("DELETE FROM courses WHERE course_code = %s", (course_code,))
+            self.connection.commit()
+        except mysql.connector.Error as err:
+            messagebox.showerror("Error", f"Error deleting course: {err}")
+            return
+
+        # Reload courses in the GUI
+        self.load_courses()
+
         messagebox.showinfo("Success", f"Course {course_code} deleted successfully!")
+
+    def delete_course_from_database(self, course_code):
+        try:
+            # Update corresponding course_code to "N/A" in the student table
+            self.cursor.execute("UPDATE students SET course_code = 'N/A' WHERE course_code = %s", (course_code,))
+            self.connection.commit()
+
+            # Now delete the course from the Courses table
+            self.cursor.execute("DELETE FROM courses WHERE course_code = %s", (course_code,))
+            self.connection.commit()
+
+            # Reload courses in the GUI
+            self.load_courses()
+
+        except mysql.connector.Error as err:
+            messagebox.showerror("Error", f"Error deleting course: {err}")
 
     def check_course(self, course_code):
         # Execute an SQL query to check if the course code exists in the database
         self.cursor.execute("SELECT COUNT(*) FROM Courses WHERE LOWER(course_code) = %s", (course_code.lower(),))
         count = self.cursor.fetchone()[0]
         return count > 0
-
-    def delete_course_from_database(self, course_code):
-        # Delete the course from the Courses table
-        self.cursor.execute("DELETE FROM Courses WHERE course_code = %s", (course_code,))
-        self.connection.commit()
-
-        # Update corresponding course code to "N/A" in the student table
-        self.cursor.execute("UPDATE Students SET course_code = 'N/A' WHERE course_code = %s", (course_code,))
-        self.connection.commit()
-
-        messagebox.showinfo("Success", f"Course {course_code} deleted successfully!")
-
+    
     def search_course(self, event=None):
         keyword = self.search_entry.get().lower()
 
