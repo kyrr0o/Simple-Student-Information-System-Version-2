@@ -15,10 +15,10 @@ CREATE TABLE students (
     gender ENUM('Male', 'Female'),
     course_code VARCHAR(10),
     yearLevel VARCHAR(10),
-    FOREIGN KEY (course_code) REFERENCES courses(course_code)
+    FOREIGN KEY (course_code) REFERENCES courses(course_code) ON DELETE SET NULL
 );
 
-INSERT INTO courses (course_code, course_title) VALUES
+INSERT INTO Courses (course_code, course_title) VALUES
 ('BSCS', 'BS-COMPUTER SCIENCE'),
 ('BSCA', 'BS-COMPUTER APPLICATIONS'),
 ('BSIS', 'BS-INFORMATION SYSTEM'),
@@ -26,5 +26,5 @@ INSERT INTO courses (course_code, course_title) VALUES
 
 INSERT INTO students (idNum, first_name, last_name, gender, course_code, yearLevel) VALUES
 ('2021-1756', 'Kaycee', 'Nalzaro', 'Female', 'BSCS', '1'),
-('2021-1746', 'Nicole', 'Mendoza', 'Female', 'BSCS', '1'),
-('2021-1736', 'John Mark', 'Montilla', 'Male', 'BSCS', '1');
+('2021-1746', 'Nikki', 'Robles', 'Female', 'BSCS', '1'),
+('2021-1736', 'Justine', 'Vergara', 'Male', 'BSCS', '1');
